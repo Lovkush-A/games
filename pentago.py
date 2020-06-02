@@ -35,7 +35,7 @@ class pentago():
         
     
     def replace_board(self, board):
-        # for testing purposes
+        # manually change the board, for testing purposes
         self.board = board
     
     def moves(self):
@@ -98,21 +98,21 @@ class pentago():
             print('It is a draw')
     
     def game_over(self):
-        if any(
-                [ all(
-                    [self.board[i][j] == 'o'
-                     for i,j in line ]
-                    )
-                 for line in self.lines]):
+        if any([
+                all([
+                    self.board[i][j] == 'o' for i,j in line
+                    ])
+                for line in self.lines
+                ]):
             self.value = 1
             return True
-        elif any(
-                [ all(
-                    [self.board[i][j] == 'x'
-                     for i,j in line ]
-                    )
-                 for line in self.lines]):
-            self.value = 1
+        elif any([
+                all([
+                    self.board[i][j] == 'x' for i,j in line
+                    ])
+                for line in self.lines
+                ]):
+            self.value = 0
             return True
         elif len(self.moves()) == 0:
             self.value = 0.5
@@ -139,20 +139,26 @@ board2 = [['o', 'o', 'o', 'x', 'x', 'x'],
           ['o', 'o', 'o', 'x', 'x', 'x'],
           ['x', 'x', 'x', 'o', 'o', 'o'],
           ['o', 'o', 'o', 'x', 'x', 'x'],
-          ['x', 'x', 'x', 'o', 'o', ' ']
-    ]
+          ['x', 'x', 'x', 'o', 'o', ' ']]
 
 board3 = [['o', 'x', 'x', 'o', 'x', 'o'],
           ['o', ' ', ' ', ' ', ' ', ' '],
           ['o', 'o', 'o', 'o', 'x', 'x'],
           [' ', ' ', ' ', ' ', ' ', ' '],
           ['x', 'x', 'x', 'o', 'o', 'o'],
-          [' ', 'o', ' ', ' ', 'x', ' ']
-    ]
+          [' ', 'o', ' ', ' ', 'x', ' ']]
+
+# x to win
+board4 = [['x', 'x', 'x', 'x', ' ', ' '],
+          [' ', ' ', ' ', ' ', ' ', ' '],
+          [' ', ' ', ' ', ' ', ' ', ' '],
+          [' ', ' ', ' ', ' ', ' ', ' '],
+          [' ', ' ', ' ', ' ', ' ', ' '],
+          [' ', ' ', ' ', ' ', ' ', ' ']]
 
 
 test = pentago()
-test.replace_board(board2)
+test.replace_board(board4)
 test.play()
 
 
