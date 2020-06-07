@@ -1,4 +1,7 @@
 import copy
+import time
+import itertools
+import cProfile
     
 
 class pentago():
@@ -327,10 +330,12 @@ def play():
     print_board(board)
     print(f'the final score is {game_over(board, lines)}')
 
+
 def test():
-)    board = [[' ']*6 for _ in range(6)]
+    # empty board
+    board1 = [[' ']*6 for _ in range(6)]
     
-    
+    # one move left, game to end in a tie
     board2 = [[1,1,1,0,0,0],
               [0,0,0,1,1,1],
               [1,1,1,0,0,0],
@@ -346,7 +351,6 @@ def test():
               [0,  0,  0,  1,  1,  1  ],
               [' ',1  ,' ',' ',0  ,' ']]
               
-    
     # 0 to win immediately
     board4 = [[0,0,0,0, ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
@@ -362,6 +366,15 @@ def test():
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' ']]
+    
+    # boards = [board1, board2, board3, board4, board5]
+    # for board, player in itertools.product(boards,range(2)):
+    #     print_board(board)
+    #     output, time = timer(find_move, board, player, 2)
+    #     print(f"Move for player {player}: {output}")
+    #     print(f"Time taken: {time}")
+    
+    find_move(board5, 0, 2)
 
     # print_board(board4)
     # print("Move for player 0: ", end='')
@@ -413,4 +426,13 @@ def test():
     return None
 
 
-play()
+def timer(fn, *args):
+    t0 = time.time()
+    output = fn(*args)
+    t1 = time.time()
+    return output, t1 - t0
+
+cProfile.run('test()')
+
+# test()
+# play()
