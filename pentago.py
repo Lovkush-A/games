@@ -199,8 +199,8 @@ def update_parents(node):
     
     parent.valueless_children -= 1
     
-    if node.depth == 1:
-        print(parent.valueless_children)
+    # if node.depth == 1:
+    #     print(parent.valueless_children)
     
     if parent.valueless_children == 0:
         if parent.player == 1:
@@ -315,7 +315,7 @@ def play():
             ai = True
         elif ai == True:
             print('ai is thinking...')
-            move = find_move(board, player, 3)
+            move = find_move(board, player, 2)
             if move is None:
                 move = moves(board)[0]
             ai = False
@@ -327,78 +327,90 @@ def play():
     print_board(board)
     print(f'the final score is {game_over(board, lines)}')
 
+def test():
+)    board = [[' ']*6 for _ in range(6)]
+    
+    
+    board2 = [[1,1,1,0,0,0],
+              [0,0,0,1,1,1],
+              [1,1,1,0,0,0],
+              [0,0,0,1,1,1],
+              [1,1,1,0,0,0],
+              [0,0,0,1,1,' ']]
+    
+    # 1 to win , and 0 cannot block
+    board3 = [[1  ,0  ,0  ,1  ,0  ,1  ],
+              [1  ,' ',' ',' ',' ',' '],
+              [1  ,1  ,1  ,1  ,0  ,0  ],
+              [' ',' ',' ',' ',' ',' '],
+              [0,  0,  0,  1,  1,  1  ],
+              [' ',1  ,' ',' ',0  ,' ']]
+              
+    
+    # 0 to win immediately
+    board4 = [[0,0,0,0, ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' ']]
+    
+    # 1 to find winning move
+    board5 = [[' ', ' ', ' ', ' ', ' ', ' '],
+              [' ',1,1, ' ',1, ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' '],
+              [' ', ' ', ' ', ' ', ' ', ' ']]
 
-# play()
+    # print_board(board4)
+    # print("Move for player 0: ", end='')
+    # print(find_move(board4,0,1))
+    # print("Move for player 1: ", end='')
+    # print(find_move(board4,1,2))
+    
+    # print_board(board3)
+    # print("Move for player 1: ", end='')
+    # print(find_move(board3,1,1))
+    # print("Move for player 0: ", end='')
+    # print(find_move(board3,0,2))
+    
+    # print('\nWinning position if player 1 makes their move:')
+    # print_board(new_board(board3, 1, find_move(board3,1,1)))    
+    
+    # print_board(board2)
+    # print(moves(board2))
+    # for move in moves(board3):
+    #     print(move)
+    #     new = new_board(board3, 1, move)
+    #     print_board(new)
+    #     print(game_over(new, lines))
+    
+    
+    # test = pentago()
+    # test.replace_board(board4)
+    # test.play()
+    
+    # test.replace_board(board3)
+    # test.print_board()
+    # test.update_board((1,4,1,'c'))
+    # test.print_board()
+    
+    # test.rotate(0,'ac')
+    # test.print_board()
+    # print(test.player)
+    
+    
+    # testing set of lines is correct
+    # test = pentago()
+    # for line in lines:
+    #     new_board = copy.deepcopy(board)
+    #     for i,j in line:
+    #         new_board[i][j] = 'o'
+    #         test.replace_board(new_board)
+    #     test.print_board()
+    
+    return None
 
 
-board = [[' ']*6 for _ in range(6)]
-
-
-board2 = [[1,1,1,0,0,0],
-          [0,0,0,1,1,1],
-          [1,1,1,0,0,0],
-          [0,0,0,1,1,1],
-          [1,1,1,0,0,0],
-          [0,0,0,1,1,' ']]
-
-# 1 to win , and 0 cannot block
-board3 = [[1  ,0  ,0  ,1  ,0  ,1  ],
-          [1  ,' ',' ',' ',' ',' '],
-          [1  ,1  ,1  ,1  ,0  ,0  ],
-          [' ',' ',' ',' ',' ',' '],
-          [0,  0,  0,  1,  1,  1  ],
-          [' ',1  ,' ',' ',0  ,' ']]
-          
-
-# 0 to win immediately
-board4 = [[0,0,0,0, ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' ']]
-
-# 1 to find winning move
-board5 = [[' ', ' ', ' ', ' ', ' ', ' '],
-          [' ',1,1, ' ',1, ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' '],
-          [' ', ' ', ' ', ' ', ' ', ' ']]
-
-
-print(find_move(board5, 1, 3))
-
-
-
-# print_board(board2)
-# print(moves(board2))
-# for move in moves(board3):
-#     print(move)
-#     new = new_board(board3, 1, move)
-#     print_board(new)
-#     print(game_over(new, lines))
-
-
-# test = pentago()
-# test.replace_board(board4)
-# test.play()
-
-# test.replace_board(board3)
-# test.print_board()
-# test.update_board((1,4,1,'c'))
-# test.print_board()
-
-# test.rotate(0,'ac')
-# test.print_board()
-# print(test.player)
-
-
-# testing set of lines is correct
-# test = pentago()
-# for line in lines:
-#     new_board = copy.deepcopy(board)
-#     for i,j in line:
-#         new_board[i][j] = 'o'
-#         test.replace_board(new_board)
-#     test.print_board()
+play()
