@@ -147,8 +147,71 @@ class Frontier():
         self.boards.append([node.parent, node.board])
 
 
-def find_move(board, player, max_depth):
+def find_move2(node, max_depth):
     
+    board = node.board
+    
+    if game_over(board, lines) is not None:
+        node.value = game_over(board, lines)
+        update_parents2(node)
+        return None
+    
+    if node.depth == max_depth:
+        node.value = 0.5 + random.random()*0.1
+        update_parents2(node)
+        return None
+    
+    boards_seen = []
+    moves_left = len(moves(board))
+    for move in moves(board):
+        if node.depth == 0:
+            moves_left -= 1
+            print(moves_left)
+        
+        if prune2(node) or node.min_value == node.max_value:
+            break
+        
+        new_board_ = new_board(board, node.player, move)
+        
+        if new_board_ in boards_seen:
+            continue
+        
+        new_node = Node(new_board_,
+                        1-node.player,
+                        node,
+                        move,
+                        node.depth + 1)
+        
+        boards_seen.append(new_board_)
+        
+        find_move2(new_node, max_depth)
+    
+    if node.player == 1:
+        node.value = node.min_value
+    elif node.player == 0:
+        node.value = node.max_value
+    if node.depth > 0:
+        update_parents2(node)
+        
+    return node.best_move
+    
+
+def update_parents2(node):
+    parent = node.parent
+    
+    if parent is None:
+        1 + 1 == 2
+    
+    if parent.player == 1 and node.value > parent.min_value:
+        parent.min_value = node.value
+        parent.best_move = node.action
+    elif parent.player == 0 and node.value < parent.max_value:
+        parent.max_value = node.value
+        parent.best_move = node.action
+    
+
+
+def find_move(board, player, max_depth):
     initial_node = Node(board, player, None, None, depth=0)
     frontier = Frontier()
     frontier.add_node(initial_node)
@@ -213,6 +276,10 @@ def update_parents(node, prune = False):
             
         if parent.depth > 0:
             update_parents(parent)
+            
+
+
+
 
 
 def moves(board):
@@ -319,6 +386,20 @@ def prune(node):
         return False
 
 
+def prune2(node):
+    if node.depth < 2:
+        return False
+    
+    parent = node
+    gparent = parent.parent
+    
+    if node.player == 1 and parent.max_value  < gparent.min_value:
+        return True
+    elif node.player == 0 and parent.min_value > gparent.max_value:
+        return True
+    else:
+        return False
+
 
 def play():
     board = [[' ']*6 for _ in range(6)]
@@ -350,10 +431,10 @@ def play():
 
 def test():
     # empty board
-    board1 = [[' ']*6 for _ in range(6)]
+    board0 = [[' ']*6 for _ in range(6)]
     
     # one move left, game to end in a tie
-    board2 = [[1,1,1,0,0,0],
+    board1 = [[1,1,1,0,0,0],
               [0,0,0,1,1,1],
               [1,1,1,0,0,0],
               [0,0,0,1,1,1],
@@ -361,7 +442,7 @@ def test():
               [0,0,0,1,1,' ']]
     
     # 1 to win , and 0 cannot block
-    board3 = [[1  ,0  ,0  ,1  ,0  ,1  ],
+    board2 = [[1  ,0  ,0  ,1  ,0  ,1  ],
               [1  ,' ',' ',' ',' ',' '],
               [1  ,1  ,1  ,1  ,0  ,0  ],
               [' ',' ',' ',' ',' ',' '],
@@ -369,7 +450,7 @@ def test():
               [' ',1  ,' ',' ',0  ,' ']]
               
     # 0 to win immediately
-    board4 = [[0,0,0,0, ' ', ' '],
+    board3 = [[0,0,0,0, ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
@@ -377,18 +458,31 @@ def test():
               [' ', ' ', ' ', ' ', ' ', ' ']]
     
     # 1 to find winning move
-    board5 = [[' ', ' ', ' ', ' ', ' ', ' '],
+    board4 = [[' ', ' ', ' ', ' ', ' ', ' '],
               [' ',1,1, ' ',1, ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' ']]
     
-    boards = [board1, board2, board3, board4, board5]
-    for board, player in itertools.product(range(5),range(2)):
-        output, time = timer(find_move, boards[board], player, 2)
-        print(f"Board: {board}, Player: {player}, Time taken: {time}")
-
+    boards = [board0, board1, board2, board3, board4]
+    # for board, player in itertools.product(range(1),range(2)):
+    #     output, time = timer(find_move, boards[board], player, 2)
+    #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
+    
+    # -------loop through boards using version 2
+    # for board, player in itertools.product(range(5),range(2)):
+    #     root_node = Node(boards[board], player, None, None, depth=0)
+    #     output, time = timer(find_move2, root_node, 2)
+    #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
+    
+    
+    # ------test finding optimal move for depth 3
+    node4 = Node(board4, 1, None, None, 0)
+    # print(find_move2(node4,3))
+    print(timer(find_move2, node4,3))
+    
+    
     # print_board(board4)
     # print("Move for player 0: ", end='')
     # print(find_move(board4,0,1))
@@ -479,3 +573,42 @@ test()
 # Board: 3, Player: 1, Time taken: 29.470968008041382
 # Board: 4, Player: 0, Time taken: 8.629671812057495
 # Board: 4, Player: 1, Time taken: 8.283491134643555
+
+
+# ---------------version 2/no frontiers/prune before creating boards
+# Board: 0, Player: 0, Time taken: 12.889657735824585
+# Board: 0, Player: 1, Time taken: 12.759357213973999
+# Board: 1, Player: 0, Time taken: 0.0018579959869384766
+# Board: 1, Player: 1, Time taken: 0.001600027084350586
+# Board: 2, Player: 0, Time taken: 1.8888230323791504
+# Board: 2, Player: 1, Time taken: 1.9842233657836914
+# Board: 3, Player: 0, Time taken: 9.999610185623169
+# Board: 3, Player: 1, Time taken: 9.902679204940796
+# Board: 4, Player: 0, Time taken: 10.221951961517334
+# Board: 4, Player: 1, Time taken: 10.249742031097412
+
+
+# ---------------version 2 + check repeat boards--
+# Board: 0, Player: 0, Time taken: 1.0767178535461426
+# Board: 0, Player: 1, Time taken: 1.0690727233886719
+# Board: 1, Player: 0, Time taken: 0.0011839866638183594
+# Board: 1, Player: 1, Time taken: 0.00102996826171875
+# Board: 2, Player: 0, Time taken: 1.9064719676971436
+# Board: 2, Player: 1, Time taken: 1.861788034439087
+# Board: 3, Player: 0, Time taken: 5.333322048187256
+# Board: 3, Player: 1, Time taken: 5.413770914077759
+# Board: 4, Player: 0, Time taken: 2.98577880859375
+# Board: 4, Player: 1, Time taken: 2.9099860191345215
+
+
+# -------------- above + break if min = max
+# Board: 0, Player: 0, Time taken: 1.098992109298706
+# Board: 0, Player: 1, Time taken: 1.1168200969696045
+# Board: 1, Player: 0, Time taken: 0.0010449886322021484
+# Board: 1, Player: 1, Time taken: 0.0011928081512451172
+# Board: 2, Player: 0, Time taken: 0.32472896575927734
+# Board: 2, Player: 1, Time taken: 0.34493279457092285
+# Board: 3, Player: 0, Time taken: 0.141754150390625
+# Board: 3, Player: 1, Time taken: 0.897752046585083
+# Board: 4, Player: 0, Time taken: 3.121652126312256
+# Board: 4, Player: 1, Time taken: 2.9370980262756348
