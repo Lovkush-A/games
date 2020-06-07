@@ -2,6 +2,7 @@ import copy
 import time
 import itertools
 import cProfile
+import random
     
 
 class pentago():
@@ -156,16 +157,14 @@ def find_move(board, player, max_depth):
         current_node = frontier.next_node()
         current_board = current_node.board
         
-        # if current_node.depth == 2:
-        #     x,y,*c = current_node.action
-        #     if current_node.action == (1,3,1,'c'):
-        #         x = x
-        
+        if prune(current_node):
+            update_parents(current_node, True)
+            continue
         if game_over(current_board, lines) is not None:
             current_node.value = game_over(current_board, lines)
             update_parents(current_node)
         elif current_node.depth == max_depth:
-            current_node.value = 0.5
+            current_node.value = 0.5 + random.random()*0.1
             update_parents(current_node)
         else:
             for move in moves(current_board):        
@@ -190,15 +189,16 @@ def find_move(board, player, max_depth):
     return initial_node.best_move
 
 
-def update_parents(node):
+def update_parents(node, prune = False):
     parent = node.parent
     
-    if parent.player == 1 and node.value > parent.min_value:
-        parent.min_value = node.value
-        parent.best_move = node.action
-    elif parent.player == 0 and node.value < parent.max_value:
-        parent.max_value = node.value
-        parent.best_move = node.action
+    if not(prune):
+        if parent.player == 1 and node.value > parent.min_value:
+            parent.min_value = node.value
+            parent.best_move = node.action
+        elif parent.player == 0 and node.value < parent.max_value:
+            parent.max_value = node.value
+            parent.best_move = node.action
     
     parent.valueless_children -= 1
     
@@ -303,6 +303,23 @@ def ask_for_move():
     return (i,j,q,d)
 
 
+
+def prune(node):
+    if node.depth < 2:
+        return False
+    
+    parent = node.parent
+    gparent = parent.parent
+    
+    if node.player == 1 and parent.max_value  < gparent.min_value:
+        return True
+    elif node.player == 0 and parent.min_value > gparent.max_value:
+        return True
+    else:
+        return False
+
+
+
 def play():
     board = [[' ']*6 for _ in range(6)]
     ai =  False
@@ -367,14 +384,10 @@ def test():
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' ']]
     
-    # boards = [board1, board2, board3, board4, board5]
-    # for board, player in itertools.product(boards,range(2)):
-    #     print_board(board)
-    #     output, time = timer(find_move, board, player, 2)
-    #     print(f"Move for player {player}: {output}")
-    #     print(f"Time taken: {time}")
-    
-    find_move(board5, 0, 2)
+    boards = [board1, board2, board3, board4, board5]
+    for board, player in itertools.product(range(5),range(2)):
+        output, time = timer(find_move, boards[board], player, 2)
+        print(f"Board: {board}, Player: {player}, Time taken: {time}")
 
     # print_board(board4)
     # print("Move for player 0: ", end='')
@@ -432,7 +445,37 @@ def timer(fn, *args):
     t1 = time.time()
     return output, t1 - t0
 
-cProfile.run('test()')
-
-# test()
+# cProfile.run('test()')
+test()
 # play()
+
+
+
+
+
+
+# --------------No optimisations----------------
+
+# Board: 0, Player: 0, Time taken: 1.5973551273345947
+# Board: 0, Player: 1, Time taken: 1.5876989364624023
+# Board: 1, Player: 0, Time taken: 0.0011789798736572266
+# Board: 1, Player: 1, Time taken: 0.0010318756103515625
+# Board: 2, Player: 0, Time taken: 5.049747943878174
+# Board: 2, Player: 1, Time taken: 4.941879034042358
+# Board: 3, Player: 0, Time taken: 29.29101586341858
+# Board: 3, Player: 1, Time taken: 32.09774899482727
+# Board: 4, Player: 0, Time taken: 9.555429935455322
+# Board: 4, Player: 1, Time taken: 9.259257078170776
+
+
+# --------------pruning------------------------
+# Board: 0, Player: 0, Time taken: 1.345466136932373
+# Board: 0, Player: 1, Time taken: 1.3997290134429932
+# Board: 1, Player: 0, Time taken: 0.0012030601501464844
+# Board: 1, Player: 1, Time taken: 0.0010488033294677734
+# Board: 2, Player: 0, Time taken: 5.284406900405884
+# Board: 2, Player: 1, Time taken: 4.617739915847778
+# Board: 3, Player: 0, Time taken: 26.17604088783264
+# Board: 3, Player: 1, Time taken: 29.470968008041382
+# Board: 4, Player: 0, Time taken: 8.629671812057495
+# Board: 4, Player: 1, Time taken: 8.283491134643555
