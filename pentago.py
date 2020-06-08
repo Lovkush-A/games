@@ -4,7 +4,7 @@ import itertools
 import cProfile
 import random
     
-# random.seed(0)
+random.seed(0)
 
 class Node():
     def __init__(self, board, player, parent, action, depth):
@@ -102,24 +102,24 @@ def moves(board):
 def new_board(board, player, move):
     i,j, quadrant, direction = move
     new_board = board.copy()
-    new_board[6*i+j] = player    
+    new_board[6*i+j] = player 
     
     # create quadrant to be rotated
     q = [[0,0], [0,1], [1,0], [1,1]][quadrant]
     temp = new_board.copy()
-    sub_board = [ [temp[6*(3*q[0]+i)+(3*q[1]+j)]
-                    for j in range(3)] for i in range(3)] 
-    
+    sub_board = [ temp[6*(3*q[0]+(ij//3))+(3*q[1]+(ij%3))]
+                  for ij in range(9)]
+                
     # rotate quadrant and update new board
     if direction == 'c':
         for i in range(3):
             for j in range(3):
-                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[2-j][i]
+                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[3*(2-j)+i]
                 
     if direction == 'ac':
         for i in range(3):
             for j in range(3):
-                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[j][2-i]   
+                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[3*j+(2-i)] 
     
     return new_board
 
@@ -313,70 +313,66 @@ def play():
 
 def test():
     # empty board
-    board0 = [[' ']*6 for _ in range(6)]
+    board0 = [' ' for _ in range(36)]
     
     # one move left, game to end in a tie
-    board1 = [[1,1,1,0,0,0],
-              [0,0,0,1,1,1],
-              [1,1,1,0,0,0],
-              [0,0,0,1,1,1],
-              [1,1,1,0,0,0],
-              [' ',0,0,1,1,1]]
+    board1 = [1,1,1,0,0,0,
+              0,0,0,1,1,1,
+              1,1,1,0,0,0,
+              0,0,0,1,1,1,
+              1,1,1,0,0,0,
+              ' ',0,0,1,1,1]
     
     # 1 to win , and 0 cannot block
-    board2 = [[1  ,0  ,0  ,1  ,0  ,1  ],
-              [1  ,' ',' ',' ',' ',' '],
-              [1  ,1  ,1  ,1  ,0  ,0  ],
-              [' ',' ',' ',' ',' ',' '],
-              [0,  0,  0,  1,  1,  1  ],
-              [' ',1  ,' ',' ',0  ,' ']]
+    board2 = [1  ,0  ,0  ,1  ,0  ,1  ,
+              1  ,' ',' ',' ',' ',' ',
+              1  ,1  ,1  ,1  ,0  ,0  ,
+              ' ',' ',' ',' ',' ',' ',
+              0,  0,  0,  1,  1,  1  ,
+              ' ',1  ,' ',' ',0  ,' ']
               
     # 0 to win immediately
-    board3 = [[0,' ',' ',' ', ' ', ' '],
-              [0, ' ', ' ', ' ', ' ', ' '],
-              [0, ' ', ' ', ' ', ' ', ' '],
-              [0, ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' ']]
+    board3 = [0,' ',' ',' ', ' ', ' ',
+              0, ' ', ' ', ' ', ' ', ' ',
+              0, ' ', ' ', ' ', ' ', ' ',
+              0, ' ', ' ', ' ', ' ', ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ']
     
     # 1 to find winning move
-    board4 = [[' ', ' ', ' ', ' ', ' ', ' '],
-              [' ',1,1, ' ',1, ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' ']]
+    board4 = [' ', ' ', ' ', ' ', ' ', ' ',
+              ' ',1,1, ' ',1, ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ',
+              ' ', ' ', ' ', ' ', ' ', ' ']
         
     boards = [board0, board1, board2, board3, board4]
-    
-    new_boards = [ [board[i][j] for i in range(6) for j in range(6)]
-                  for board in boards ]
             
-
     # -------loop through boards
     # for board, player in itertools.product(range(5),range(2)):
-        # root_node = Node(new_boards[board], player, None, None, depth=0)
+        # root_node = Node(boards[board], player, None, None, depth=0)
         # output, time = timer(find_move, root_node, 2)
         # print(f"Board: {board}, Player: {player}, Time taken: {time}")
         # print(f"Board: {board}, Player: {player}, Output: {output}, Time taken: {time}")
     
     # ------test finding optimal move for depth 3
-    node4 = Node(new_boards[4], 1, None, None, 0)
-    print(timer(find_move, node4,3))
+    # node4 = Node(boards[4], 1, None, None, 0)
+    # print(timer(find_move, node4,3))
     
     # ------test finding optimal move for depth 4
-    # node4 = Node(new_boards[4], 0, None, None, 0)
+    # node4 = Node(boards[4], 0, None, None, 0)
     # print(timer(find_move, node4,4))
     
     
     # -------test game over
-    # print(game_over3(new_boards[3],lines3))
+    # print(game_over3(boards[3],lines3))
     # new_boards[3][4] = 0
-    # print(game_over3(new_boards[3],lines3))
-    # print(game_over3(new_boards[4], lines3))
+    # print(game_over3(boards[3],lines3))
+    # print(game_over3(boards[4], lines3))
     # new_boards[4][6] = 1
     # new_boards[4][9] = 1
-    # print(game_over3(new_boards[4], lines3))
+    # print(game_over3(boards[4], lines3))
     
    
     # --------- lines is correc
@@ -395,8 +391,8 @@ def timer(fn, *args):
     t1 = time.time()
     return output, t1 - t0
 
-cProfile.run('test()')
-# test()
+# cProfile.run('test()')
+test()
 # play()
 
 
@@ -728,5 +724,45 @@ cProfile.run('test()')
  #   301322    0.048    0.000    0.048    0.000 {method 'copy' of 'list' objects}
  #        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
  #    11888    0.002    0.000    0.002    0.000 {method 'random' of '_random.Random' objects}
+
+
+# new board updated to only have rank1 arrays
+ #   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ #        1    0.000    0.000    2.831    2.831 <string>:1(<module>)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:309(_is_master_process)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:322(_schedule_flush)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:384(write)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:93(_event_pipe)
+ #   157217    0.122    0.000    0.122    0.000 pentago.py:10(__init__)
+ #   157216    0.810    0.000    1.269    0.000 pentago.py:102(new_board)
+ #   157216    0.410    0.000    0.410    0.000 pentago.py:110(<listcomp>)
+ #    14925    0.186    0.000    0.763    0.000 pentago.py:198(game_over1)
+ #   148890    0.078    0.000    0.078    0.000 pentago.py:204(<listcomp>)
+ # 157217/1    0.474    0.000    2.831    2.831 pentago.py:25(find_move)
+ #   159519    0.065    0.000    0.065    0.000 pentago.py:273(prune)
+ #        1    0.000    0.000    2.831    2.831 pentago.py:314(test)
+ #        1    0.000    0.000    0.000    0.000 pentago.py:316(<listcomp>)
+ #        5    0.000    0.000    0.000    0.000 pentago.py:352(<listcomp>)
+ #        1    0.000    0.000    2.831    2.831 pentago.py:392(timer)
+ #   155098    0.061    0.000    0.061    0.000 pentago.py:79(update_parents)
+ #    17240    0.013    0.000    0.554    0.000 pentago.py:92(moves)
+ #    17240    0.540    0.000    0.540    0.000 pentago.py:93(<listcomp>)
+ #        3    0.000    0.000    0.000    0.000 socket.py:342(send)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1017(_wait_for_tstate_lock)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1071(is_alive)
+ #        3    0.000    0.000    0.000    0.000 threading.py:513(is_set)
+ #   148890    0.019    0.000    0.019    0.000 {built-in method builtins.all}
+ #        1    0.000    0.000    2.831    2.831 {built-in method builtins.exec}
+ #        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+ #    14863    0.002    0.000    0.002    0.000 {built-in method builtins.len}
+ #        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+ #        2    0.000    0.000    0.000    0.000 {built-in method posix.getpid}
+ #        2    0.000    0.000    0.000    0.000 {built-in method time.time}
+ #        3    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+ #        3    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+ #   314432    0.048    0.000    0.048    0.000 {method 'copy' of 'list' objects}
+ #        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+ #    12486    0.002    0.000    0.002    0.000 {method 'random' of '_random.Random' objects}
 
 
