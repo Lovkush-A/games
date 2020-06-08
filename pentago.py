@@ -147,6 +147,58 @@ class Frontier():
         self.boards.append([node.parent, node.board])
 
 
+
+def find_move3(node, max_depth):
+    
+    board = node.board
+    
+    go = game_over3(board, lines5)
+    if go is not None:
+        node.value = go
+        update_parents2(node)
+        return None
+    
+    if node.depth == max_depth:
+        node.value = 0.5 + random.random()*0.1
+        update_parents2(node)
+        return None
+    
+    boards_seen = []
+    # moves_left = len(moves3(board))
+    for move in moves3(board):
+        # if node.depth == 0:
+            # moves_left -= 1
+            # print(moves_left)
+        
+        if prune2(node) or node.min_value == node.max_value:
+            break
+        
+        new_board_ = new_board3(board, node.player, move)
+        
+        if new_board_ in boards_seen:
+            continue
+        
+        new_node = Node(new_board_,
+                        1-node.player,
+                        node,
+                        move,
+                        node.depth + 1)
+        
+        boards_seen.append(new_board_)
+        
+        find_move3(new_node, max_depth)
+    
+    if node.player == 1:
+        node.value = node.min_value
+    elif node.player == 0:
+        node.value = node.max_value
+    if node.depth > 0:
+        update_parents2(node)
+        
+    return node.best_move
+
+
+
 def find_move2(node, max_depth):
     
     board = node.board
@@ -162,11 +214,11 @@ def find_move2(node, max_depth):
         return None
     
     boards_seen = []
-    moves_left = len(moves(board))
+    # moves_left = len(moves(board))
     for move in moves(board):
-        if node.depth == 0:
-            moves_left -= 1
-            print(moves_left)
+        # if node.depth == 0:
+        #     moves_left -= 1
+        #     print(moves_left)
         
         if prune2(node) or node.min_value == node.max_value:
             break
@@ -292,6 +344,16 @@ def moves(board):
     return moves
     
 
+def moves3(board):
+    moves = [(i,j,quadrant, direction)
+             for i in range(6)
+             for j in range(6)
+             if board[6*i+j] == ' '
+             for quadrant in range(4)
+             for direction in ['c', 'ac']]
+    return moves
+
+
 def new_board(board, player, move):
     i,j, quadrant, direction = move
     new_board = copy.deepcopy(board)
@@ -317,6 +379,32 @@ def new_board(board, player, move):
     return new_board
 
 
+def new_board3(board, player, move):
+    i,j, quadrant, direction = move
+    new_board = board.copy()
+    new_board[6*i+j] = player    
+    
+    # create array of quadrant of original board to be rotated
+    q = [[0,0], [0,1], [1,0], [1,1]][quadrant]
+    temp = new_board.copy()
+    sub_board = [ [temp[6*(3*q[0]+i)+(3*q[1]+j)]
+                    for j in range(3)] for i in range(3)] 
+    
+    # rotate quadrant and update new board
+    if direction == 'c':
+        for i in range(3):
+            for j in range(3):
+                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[2-j][i]
+                
+    if direction == 'ac':
+        for i in range(3):
+            for j in range(3):
+                new_board[6*(3*q[0]+i)+(3*q[1]+j)] = sub_board[j][2-i]   
+    
+    return new_board
+
+
+
 def print_board(board):
     for i in range(11):
         for j in range(11):
@@ -326,6 +414,19 @@ def print_board(board):
                 print('|', end = '')
             else:
                 print(board[int(i/2)][int(j/2)], end = '')
+        print('')
+    print('\n')
+
+
+def print_board3(board):
+    for i in range(11):
+        for j in range(11):
+            if i % 2 == 1:
+                print('-', end = '')
+            elif j % 2 == 1:
+                print('|', end = '')
+            else:
+                print(board[int(i/2)*6 + int(j/2)], end = '')
         print('')
     print('\n')
 
@@ -341,6 +442,71 @@ def create_lines():
                 for i in range(2) for j in range(4,6)]
     return lines_h+lines_v+lines_d1+lines_d2
 lines = create_lines()
+
+
+
+def create_lines3():
+    lines_h = [[6*i+(j+k) for k in range(5)] 
+               for i in range(6) for j in range(2)]
+    lines_v = [[6*(i+k)+j for k in range(5)]
+               for i in range(2) for j in range(6)]
+    lines_d1 = [[6*(i+k)+j+k for k in range(5)] 
+                for i in range(2) for j in range(2)]
+    lines_d2 = [[6*(i+k)+j-k for k in range(5)] 
+                for i in range(2) for j in range(4,6)]
+    return lines_h+lines_v+lines_d1+lines_d2
+lines3 = create_lines3()
+
+
+def create_lines4():
+    old_lines = create_lines3()
+    line_dict = {}
+    
+    while len(old_lines)>0:
+        coordinates = [line[i] for line in old_lines for i in range(5)]
+        freq = {}
+
+        for c in coordinates:
+            if c not in freq:
+                freq[c] = 0
+            freq[c] += 1
+        
+        c,f = max(freq.items(), key=lambda item: item[1])
+        
+        new_lines = []
+        for line in old_lines:
+            if c in line:
+                new_lines.append(line)
+        
+        for line in new_lines:
+            old_lines.remove(line)
+        
+        line_dict[c] = new_lines
+            
+    return line_dict
+lines4 = create_lines4()
+
+def create_lines5():
+    lines_h = [[6*i+(1+k) for k in range(4)] 
+               for i in range(6)]
+    h_extra = [[6*i+0, 6*i+5] for i in range(6)]
+    
+    lines_v = [[6*(1+k)+j for k in range(4)]
+               for j in range(6)]
+    v_extra = [[6*0+j, 6*5+j] for j in range(6)]
+    
+    lines_d1 = [[6*(i+k)+j+k for k in range(5)] 
+                for i in range(2) for j in range(2)]
+    lines_d2 = [[6*(i+k)+j-k for k in range(5)] 
+                for i in range(2) for j in range(4,6)]
+    lines_d = lines_d1+lines_d2
+    
+    return [lines_h, h_extra, lines_v, v_extra, lines_d]
+lines5 = create_lines5()
+
+
+    
+
 
 
 def game_over(board, lines):
@@ -361,6 +527,94 @@ def game_over(board, lines):
     elif len(moves(board)) == 0:
         return 0.5
     return None
+
+
+def game_over3_0(board, lines):
+    # adapted for lines3
+    if any([
+            all([
+                board[i] == 1 for i in line
+                ])
+            for line in lines
+            ]):
+        return 1
+    elif any([
+            all([
+                board[i] == 0 for i in line
+                ])
+            for line in lines
+            ]):
+        return 0
+    elif len(moves3(board)) == 0:
+        return 0.5
+    return None
+
+
+def game_over3_1(board, lines):
+    # lines3 + change in algorithm
+    for line in lines:
+        temp = board[line[0]]
+        if temp == ' ':
+            continue
+        if all([board[line[i]] == temp for i in [1,2,3,4]]):
+            return board[line[0]]
+    if len(moves3(board)) == 0:
+        return 0.5
+    return None
+
+
+def game_over3_2(board, lines_dict):
+    # combines with lines4
+    for c, lines in lines_dict.items():
+        temp = board[c]
+        if temp == ' ':
+            continue
+    
+        for line in lines:
+            if all([board[line[i]] == temp for i in [0,1,2,3,4]]):
+                return temp
+            
+    if len(moves3(board)) == 0:
+        return 0.5
+    return None
+
+
+def game_over3(board, lines_info):
+    # combines with lines5
+    lines_h, h_extra, lines_v, v_extra, lines_d = lines_info
+    
+    for i in range(6):
+        line = lines_h[i]
+        c0, c5 = h_extra[i]
+        temp = board[line[0]]
+        
+        if temp == ' ':
+            continue
+        if all([board[line[i]] == temp for i in [1,2,3]]):
+            if board[c0] == temp or board[c5] == temp:
+                return temp
+    
+    for i in range(6):   
+        line = lines_v[i]
+        c0, c5 = v_extra[i]
+        temp = board[line[0]]
+        
+        if temp == ' ':
+            continue
+        if all([board[line[i]] == temp for i in [1,2,3]]):
+            if board[c0] == temp or board[c5] == temp:
+                return temp
+    
+    for line in lines_d:
+        temp = board[line[0]]
+        if temp == ' ':
+            continue
+        if all([board[line[i]] == temp for i in [1,2,3,4]]):
+            return board[line[0]]
+    if len(moves3(board)) == 0:
+        return 0.5
+    return None
+
 
 
 def ask_for_move():
@@ -439,7 +693,7 @@ def test():
               [1,1,1,0,0,0],
               [0,0,0,1,1,1],
               [1,1,1,0,0,0],
-              [0,0,0,1,1,' ']]
+              [' ',0,0,1,1,1]]
     
     # 1 to win , and 0 cannot block
     board2 = [[1  ,0  ,0  ,1  ,0  ,1  ],
@@ -450,10 +704,10 @@ def test():
               [' ',1  ,' ',' ',0  ,' ']]
               
     # 0 to win immediately
-    board3 = [[0,0,0,0, ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
-              [' ', ' ', ' ', ' ', ' ', ' '],
+    board3 = [[0,' ',' ',' ', ' ', ' '],
+              [0, ' ', ' ', ' ', ' ', ' '],
+              [0, ' ', ' ', ' ', ' ', ' '],
+              [0, ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' ']]
     
@@ -464,8 +718,12 @@ def test():
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' '],
               [' ', ' ', ' ', ' ', ' ', ' ']]
-    
+        
     boards = [board0, board1, board2, board3, board4]
+    
+    new_boards = [ [board[i][j] for i in range(6) for j in range(6)]
+                  for board in boards ]
+            
     # for board, player in itertools.product(range(1),range(2)):
     #     output, time = timer(find_move, boards[board], player, 2)
     #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
@@ -474,13 +732,27 @@ def test():
     # for board, player in itertools.product(range(5),range(2)):
     #     root_node = Node(boards[board], player, None, None, depth=0)
     #     output, time = timer(find_move2, root_node, 2)
+    #     print(f"Board: {board}, Player: {player}, Move: {output}, Time taken: {time}")
+            
+    # ------test finding optimal move for depth 3, version 2
+    # node4 = Node(board4, 1, None, None, 0)
+    # print(find_move2(node4,3))
+    # print(timer(find_move2, node4,3))
+    
+    
+    
+    # -------loop through boards using version 3
+    # for board, player in itertools.product(range(5),range(2)):
+    #     root_node = Node(new_boards[board], player, None, None, depth=0)
+    #     output, time = timer(find_move3, root_node, 2)
     #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
     
+    # ------test finding optimal move for depth 3, version 3
+    node4 = Node(new_boards[4], 1, None, None, 0)
+    print(timer(find_move3, node4,3))
     
-    # ------test finding optimal move for depth 3
-    node4 = Node(board4, 1, None, None, 0)
-    # print(find_move2(node4,3))
-    print(timer(find_move2, node4,3))
+    
+    
     
     
     # print_board(board4)
@@ -530,6 +802,55 @@ def test():
     #         test.replace_board(new_board)
     #     test.print_board()
     
+    
+    # testing set of lines3 is correct
+    # for line in lines3:
+    #     test = new_boards[0].copy()
+    #     for l in line:
+    #         test[l] = 1
+    #     print_board3(test)
+    
+    
+    # test that game over works in version 3
+    # print(game_over3(new_boards[3],lines3))
+    # new_boards[3][4] = 0
+    # print(game_over3(new_boards[3],lines3))
+    # print(game_over3(new_boards[4], lines3))
+    # new_boards[4][6] = 1
+    # new_boards[4][9] = 1
+    # print(game_over3(new_boards[4], lines3))
+    
+    # test new_board works in version 3
+    # for move in moves3(new_boards[1]):
+    #     print_board3(new_board3(new_boards[1],2, move))
+    
+    # testing set of lines4 is correct
+    # for lines in lines4.values():
+    #     for line in lines:
+    #         test = new_boards[0].copy()
+    #         for l in line:
+    #             test[l] = 1
+    #         print_board3(test)
+    
+    
+    # test that game over works with lines4
+    # print(game_over3(new_boards[3],lines4))
+    # new_boards[3][4] = 0
+    # print(game_over3(new_boards[3],lines4))
+    # print(game_over3(new_boards[4], lines4))
+    # new_boards[4][6] = 1
+    # new_boards[4][9] = 1
+    # print(game_over3(new_boards[4], lines4))
+    
+    # test that game over works with lines5
+    # print(game_over3(new_boards[3],lines5))
+    # new_boards[3][24] = 0
+    # print(game_over3(new_boards[3],lines5))
+    # print(game_over3(new_boards[4], lines5))
+    # new_boards[4][6] = 1
+    # new_boards[4][9] = 1
+    # print(game_over3(new_boards[4], lines5))
+    
     return None
 
 
@@ -539,11 +860,9 @@ def timer(fn, *args):
     t1 = time.time()
     return output, t1 - t0
 
-# cProfile.run('test()')
-test()
+cProfile.run('test()')
+# test()
 # play()
-
-
 
 
 
@@ -612,3 +931,96 @@ test()
 # Board: 3, Player: 1, Time taken: 0.897752046585083
 # Board: 4, Player: 0, Time taken: 3.121652126312256
 # Board: 4, Player: 1, Time taken: 2.9370980262756348
+# depth 3 solution. ((0, 4, 1, 'ac'), 59.11349701881409) ~7mins total
+
+
+# -------------- version3. rank1 list instead of rank2 list
+# Board: 0, Player: 0, Time taken: 0.40738892555236816
+# Board: 0, Player: 1, Time taken: 0.41133594512939453
+# Board: 1, Player: 0, Time taken: 0.0005202293395996094
+# Board: 1, Player: 1, Time taken: 0.0004508495330810547
+# Board: 2, Player: 0, Time taken: 0.17560601234436035
+# Board: 2, Player: 1, Time taken: 0.16147398948669434
+# Board: 3, Player: 0, Time taken: 0.06450676918029785
+# Board: 3, Player: 1, Time taken: 0.42441606521606445
+# Board: 4, Player: 0, Time taken: 1.4196019172668457
+# Board: 4, Player: 1, Time taken: 1.418367862701416
+# depth 3 solution. ((0, 4, 1, 'ac'), 30.73452377319336) ~3.5 mins total
+
+ #   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ #        1    0.000    0.000   38.751   38.751 <string>:1(<module>)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:309(_is_master_process)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:322(_schedule_flush)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:384(write)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:93(_event_pipe)
+ #   299209    0.220    0.000    0.220    0.000 pentago.py:122(__init__)
+ # 299209/1    2.726    0.000   38.751   38.751 pentago.py:151(find_move3)
+ #   299208    0.142    0.000    0.142    0.000 pentago.py:250(update_parents2)
+ #   300963    0.229    0.000    9.265    0.000 pentago.py:346(moves3)
+ #   300963    9.036    0.000    9.036    0.000 pentago.py:347(<listcomp>) LIST OF MOVES
+ #   460503    2.395    0.000    4.527    0.000 pentago.py:381(new_board3)
+ #   460503    0.814    0.000    1.987    0.000 pentago.py:389(<listcomp>) SUB_BOARD AS RANK2 LIST
+ #   299778    1.469    0.000   30.783    0.000 pentago.py:480(game_over3) DETERMINING GAME OVER
+ #   299778    4.163    0.000   10.119    0.000 pentago.py:481(<listcomp>)
+ #  9592896    4.852    0.000    4.852    0.000 pentago.py:482(<listcomp>)
+ #   298640    4.071    0.000    9.808    0.000 pentago.py:488(<listcomp>)
+ #  9556480    4.724    0.000    4.724    0.000 pentago.py:489(<listcomp>)
+ #   461073    0.200    0.000    0.200    0.000 pentago.py:523(prune2)
+ #        1    0.000    0.000   38.751   38.751 pentago.py:566(test)
+ #        1    0.000    0.000    0.000    0.000 pentago.py:568(<listcomp>)
+ #        1    0.000    0.000    0.000    0.000 pentago.py:606(<listcomp>)
+ #        1    0.000    0.000   38.751   38.751 pentago.py:708(timer)
+ #        3    0.000    0.000    0.000    0.000 socket.py:342(send)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1017(_wait_for_tstate_lock)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1071(is_alive)
+ #        3    0.000    0.000    0.000    0.000 threading.py:513(is_set)
+ # 19149376    2.118    0.000    2.118    0.000 {built-in method builtins.all}
+ #   598418    0.157    0.000    0.157    0.000 {built-in method builtins.any}
+ #        1    0.000    0.000   38.751   38.751 {built-in method builtins.exec}
+ #        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+ #   298640    0.037    0.000    0.037    0.000 {built-in method builtins.len}
+ #        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+ #        2    0.000    0.000    0.000    0.000 {built-in method posix.getpid}
+ #        2    0.000    0.000    0.000    0.000 {built-in method time.time}
+ #        3    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+ #        3    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+ #   299208    0.039    0.000    0.039    0.000 {method 'append' of 'list' objects}
+ #   921006    0.145    0.000    0.145    0.000 {method 'copy' of 'list' objects}
+ #        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+ #   296317    0.042    0.000    0.042    0.000 {method 'random' of '_random.Random' objects}
+
+
+
+# -------------- version3. + game_over3_1
+# Board: 0, Player: 0, Time taken: 0.29244232177734375
+# Board: 0, Player: 1, Time taken: 0.2838928699493408
+# Board: 1, Player: 0, Time taken: 0.0004999637603759766
+# Board: 1, Player: 1, Time taken: 0.00033402442932128906
+# Board: 2, Player: 0, Time taken: 0.10118913650512695
+# Board: 2, Player: 1, Time taken: 0.10771417617797852
+# Board: 3, Player: 0, Time taken: 0.03592395782470703
+# Board: 3, Player: 1, Time taken: 0.26180291175842285
+# Board: 4, Player: 0, Time taken: 0.9436769485473633
+# Board: 4, Player: 1, Time taken: 0.9159080982208252
+# cProfile for depth 3
+   # 299778    3.458    0.000   14.519    0.000 pentago.py:500(game_over3)
+
+
+# -------------- above+call game_over only once per cycle
+   # 299209    3.335    0.000   14.162    0.000 pentago.py:532(game_over3)
+
+
+
+# -------------- version3. + lines4
+# Board: 0, Player: 0, Time taken: 0.26334691047668457
+# Board: 0, Player: 1, Time taken: 0.2673959732055664
+# Board: 1, Player: 0, Time taken: 0.0003211498260498047
+# Board: 1, Player: 1, Time taken: 0.0003368854522705078
+# Board: 2, Player: 0, Time taken: 0.10031986236572266
+# Board: 2, Player: 1, Time taken: 0.10820603370666504
+# Board: 3, Player: 0, Time taken: 0.03513503074645996
+# Board: 3, Player: 1, Time taken: 0.24969196319580078
+# Board: 4, Player: 0, Time taken: 0.9256749153137207
+# Board: 4, Player: 1, Time taken: 0.9308981895446777
+# cProfile for depth 3
