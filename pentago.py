@@ -17,23 +17,33 @@ class Node():
         self.valueless_children = 0
         self.value = None
         self.best_move = None
-
+        if depth == 0:
+            self.all_boards = {}
+        else:
+            self.all_boards = parent.all_boards
 
 def find_move(node, max_depth):   
     board = node.board
+    board_tuple = tuple(board)
+    
+    if board_tuple in node.all_boards:
+        node.value = node.all_boards[board_tuple]
+        update_parents(node)
+        return None
     
     go = game_over(board, lines)
     if go is not None:
         node.value = go
+        node.all_boards[board_tuple] = node.value
         update_parents(node)
         return None
     
     if node.depth == max_depth:
         node.value = 0.5 + random.random()*0.1
+        node.all_boards[board_tuple] = node.value
         update_parents(node)
         return None
     
-    boards_seen = []
     # moves_left = len(moves(board))
     for move in moves(board):
         # if node.depth == 0:
@@ -44,17 +54,11 @@ def find_move(node, max_depth):
             break
         
         new_board_ = new_board(board, node.player, move)
-        
-        if new_board_ in boards_seen:
-            continue
-        
         new_node = Node(new_board_,
                         1-node.player,
                         node,
                         move,
                         node.depth + 1)
-        
-        boards_seen.append(new_board_)
         
         find_move(new_node, max_depth)
     
@@ -64,6 +68,7 @@ def find_move(node, max_depth):
         node.value = node.max_value
     if node.depth > 0:
         update_parents(node)
+    node.all_boards[board_tuple] = node.value
         
     return node.best_move
     
@@ -359,14 +364,15 @@ def test():
             
 
     # -------loop through boards
-    # for board, player in itertools.product(range(5),range(2)):
-    #     root_node = Node(new_boards[board], player, None, None, depth=0)
-    #     output, time = timer(find_move, root_node, 2)
-    #     print(f"Board: {board}, Player: {player}, Output: {output}, Time taken: {time}")
+    for board, player in itertools.product(range(5),range(2)):
+        root_node = Node(new_boards[board], player, None, None, depth=0)
+        output, time = timer(find_move, root_node, 2)
+        print(f"Board: {board}, Player: {player}, Time taken: {time}")
+        # print(f"Board: {board}, Player: {player}, Output: {output}, Time taken: {time}")
     
     # ------test finding optimal move for depth 3, version 3
-    node4 = Node(new_boards[4], 1, None, None, 0)
-    print(timer(find_move, node4,3))
+    # node4 = Node(new_boards[4], 1, None, None, 0)
+    # print(timer(find_move, node4,3))
     
     
     # -------test game over
@@ -396,7 +402,7 @@ def timer(fn, *args):
     return output, t1 - t0
 
 # cProfile.run('test()')
-# test()
+test()
 # play()
 
 
@@ -620,3 +626,64 @@ def timer(fn, *args):
 #         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
 #         2    0.000    0.000    0.000    0.000 {method 'discard' of 'set' objects}
 #     37933    0.006    0.000    0.006    0.000 {method 'random' of '_random.Random' objects}
+
+
+# heuristic = 0.5 always, without all_boards, with boards seen
+  # 299209    3.491    0.000   14.883    0.000 pentago.py:215(game_over1)
+  
+  # heuristic = 0.5 always, with all boards, without boards seen
+  # 30815    0.373    0.000    1.559    0.000 pentago.py:215(game_over1)
+  
+# with both
+
+  
+ # -------------- with all_boards
+# Board: 0, Player: 0, Time taken: 0.08091402053833008
+# Board: 0, Player: 1, Time taken: 0.08608317375183105
+# Board: 1, Player: 0, Time taken: 0.0002551078796386719
+# Board: 1, Player: 1, Time taken: 0.0002338886260986328
+# Board: 2, Player: 0, Time taken: 0.08531403541564941
+# Board: 2, Player: 1, Time taken: 0.03759002685546875
+# Board: 3, Player: 0, Time taken: 0.29084110260009766
+# Board: 3, Player: 1, Time taken: 0.6572558879852295
+# Board: 4, Player: 0, Time taken: 0.16455411911010742
+# Board: 4, Player: 1, Time taken: 0.14598584175109863 
+ 
+    
+  #   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  #       1    0.002    0.002    2.199    2.199 <string>:1(<module>)
+  #       3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
+  #       2    0.000    0.000    0.000    0.000 iostream.py:309(_is_master_process)
+  #       2    0.000    0.000    0.000    0.000 iostream.py:322(_schedule_flush)
+  #       2    0.000    0.000    0.000    0.000 iostream.py:384(write)
+  #       3    0.000    0.000    0.000    0.000 iostream.py:93(_event_pipe)
+  #   18910    0.015    0.000    0.609    0.000 pentago.py:109(moves)
+  #   18910    0.595    0.000    0.595    0.000 pentago.py:110(<listcomp>)
+  #   84640    0.433    0.000    0.813    0.000 pentago.py:119(new_board)
+  #   84640    0.146    0.000    0.354    0.000 pentago.py:127(<listcomp>)
+  #   17896    0.218    0.000    0.909    0.000 pentago.py:215(game_over1)
+  #  176723    0.092    0.000    0.092    0.000 pentago.py:221(<listcomp>)
+  # 84641/1    0.284    0.000    2.197    2.197 pentago.py:25(find_move)
+  #   85541    0.037    0.000    0.037    0.000 pentago.py:290(prune)
+  #       1    0.000    0.000    2.197    2.197 pentago.py:331(test)
+  #       1    0.000    0.000    0.000    0.000 pentago.py:333(<listcomp>)
+  #       5    0.000    0.000    0.000    0.000 pentago.py:369(<listcomp>)
+  #       1    0.000    0.000    2.197    2.197 pentago.py:404(timer)
+  #   84640    0.049    0.000    0.049    0.000 pentago.py:83(update_parents)
+  #   84641    0.067    0.000    0.067    0.000 pentago.py:9(__init__)
+  #       3    0.000    0.000    0.000    0.000 socket.py:342(send)
+  #       3    0.000    0.000    0.000    0.000 threading.py:1017(_wait_for_tstate_lock)
+  #       3    0.000    0.000    0.000    0.000 threading.py:1071(is_alive)
+  #       3    0.000    0.000    0.000    0.000 threading.py:513(is_set)
+  #  176723    0.022    0.000    0.022    0.000 {built-in method builtins.all}
+  #       1    0.000    0.000    2.199    2.199 {built-in method builtins.exec}
+  #       2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+  #   17837    0.002    0.000    0.002    0.000 {built-in method builtins.len}
+  #       1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+  #       2    0.000    0.000    0.000    0.000 {built-in method posix.getpid}
+  #       2    0.000    0.000    0.000    0.000 {built-in method time.time}
+  #       3    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+  #       3    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+  #  169280    0.026    0.000    0.026    0.000 {method 'copy' of 'list' objects}
+  #       1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+  #   16764    0.003    0.000    0.003    0.000 {method 'random' of '_random.Random' objects}
