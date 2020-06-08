@@ -4,6 +4,7 @@ import itertools
 import cProfile
 import random
     
+# random.seed(0)
 
 class Node():
     def __init__(self, board, player, parent, action, depth):
@@ -14,7 +15,6 @@ class Node():
         self.depth = depth
         self.max_value = 1
         self.min_value = 0
-        self.valueless_children = 0
         self.value = None
         self.best_move = None
         if depth == 0:
@@ -45,12 +45,15 @@ def find_move(node, max_depth):
         return None
     
     # moves_left = len(moves(board))
-    for move in moves(board):
+    for move in moves(board):        
         # if node.depth == 0:
             # moves_left -= 1
             # print(moves_left)
         
-        if prune(node) or node.min_value == node.max_value:
+        if prune(node):
+            return None
+        
+        if node.min_value == node.max_value:
             break
         
         new_board_ = new_board(board, node.player, move)
@@ -73,30 +76,17 @@ def find_move(node, max_depth):
     return node.best_move
     
 
-def update_parents(node, prune = False):
+def update_parents(node):
     parent = node.parent
     
-    if not(prune):
-        if parent.player == 1 and node.value > parent.min_value:
-            parent.min_value = node.value
-            parent.best_move = node.action
-        elif parent.player == 0 and node.value < parent.max_value:
-            parent.max_value = node.value
-            parent.best_move = node.action
-    
-    parent.valueless_children -= 1
-    
-    # if node.depth == 1:
-    #     print(parent.valueless_children)
-    
-    if parent.valueless_children == 0:
-        if parent.player == 1:
-            parent.value = parent.min_value
-        elif parent.player == 0:
-            parent.value = parent.max_value
-            
-        if parent.depth > 0:
-            update_parents(parent)
+    if parent.player == 1 and node.value > parent.min_value:
+        parent.min_value = node.value
+        parent.best_move = node.action
+        parent.best_child = node
+    elif parent.player == 0 and node.value < parent.max_value:
+        parent.max_value = node.value
+        parent.best_move = node.action
+        parent.best_child = node
             
 
 def moves(board):
@@ -364,15 +354,19 @@ def test():
             
 
     # -------loop through boards
-    for board, player in itertools.product(range(5),range(2)):
-        root_node = Node(new_boards[board], player, None, None, depth=0)
-        output, time = timer(find_move, root_node, 2)
-        print(f"Board: {board}, Player: {player}, Time taken: {time}")
+    # for board, player in itertools.product(range(5),range(2)):
+        # root_node = Node(new_boards[board], player, None, None, depth=0)
+        # output, time = timer(find_move, root_node, 2)
+        # print(f"Board: {board}, Player: {player}, Time taken: {time}")
         # print(f"Board: {board}, Player: {player}, Output: {output}, Time taken: {time}")
     
-    # ------test finding optimal move for depth 3, version 3
-    # node4 = Node(new_boards[4], 1, None, None, 0)
-    # print(timer(find_move, node4,3))
+    # ------test finding optimal move for depth 3
+    node4 = Node(new_boards[4], 1, None, None, 0)
+    print(timer(find_move, node4,3))
+    
+    # ------test finding optimal move for depth 4
+    # node4 = Node(new_boards[4], 0, None, None, 0)
+    # print(timer(find_move, node4,4))
     
     
     # -------test game over
@@ -401,10 +395,9 @@ def timer(fn, *args):
     t1 = time.time()
     return output, t1 - t0
 
-# cProfile.run('test()')
-test()
+cProfile.run('test()')
+# test()
 # play()
-
 
 
 
@@ -648,8 +641,7 @@ test()
 # Board: 3, Player: 1, Time taken: 0.6572558879852295
 # Board: 4, Player: 0, Time taken: 0.16455411911010742
 # Board: 4, Player: 1, Time taken: 0.14598584175109863 
- 
-    
+
   #   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
   #       1    0.002    0.002    2.199    2.199 <string>:1(<module>)
   #       3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
@@ -687,3 +679,54 @@ test()
   #  169280    0.026    0.000    0.026    0.000 {method 'copy' of 'list' objects}
   #       1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
   #   16764    0.003    0.000    0.003    0.000 {method 'random' of '_random.Random' objects}
+  
+  # ================fixing bug in all_boards interaction with prune
+# Board: 0, Player: 0, Time taken: 0.2888009548187256
+# Board: 0, Player: 1, Time taken: 0.15045881271362305
+# Board: 1, Player: 0, Time taken: 0.00028705596923828125
+# Board: 1, Player: 1, Time taken: 0.0002300739288330078
+# Board: 2, Player: 0, Time taken: 0.0822603702545166
+# Board: 2, Player: 1, Time taken: 0.03888416290283203
+# Board: 3, Player: 0, Time taken: 0.30017614364624023
+# Board: 3, Player: 1, Time taken: 0.7593698501586914
+# Board: 4, Player: 0, Time taken: 0.3503570556640625
+# Board: 4, Player: 1, Time taken: 0.3380570411682129
+ #   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ #        1    0.000    0.000    3.193    3.193 <string>:1(<module>)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:309(_is_master_process)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:322(_schedule_flush)
+ #        2    0.000    0.000    0.000    0.000 iostream.py:384(write)
+ #        3    0.000    0.000    0.000    0.000 iostream.py:93(_event_pipe)
+ #   150662    0.125    0.000    0.125    0.000 pentago.py:10(__init__)
+ #   150661    0.806    0.000    1.515    0.000 pentago.py:102(new_board)
+ #   150661    0.277    0.000    0.661    0.000 pentago.py:110(<listcomp>)
+ #    14905    0.201    0.000    0.816    0.000 pentago.py:198(game_over1)
+ #   148402    0.083    0.000    0.083    0.000 pentago.py:204(<listcomp>)
+ # 150662/1    0.507    0.000    3.193    3.193 pentago.py:25(find_move)
+ #   153546    0.067    0.000    0.067    0.000 pentago.py:273(prune)
+ #        1    0.000    0.000    3.193    3.193 pentago.py:314(test)
+ #        1    0.000    0.000    0.000    0.000 pentago.py:316(<listcomp>)
+ #        5    0.000    0.000    0.000    0.000 pentago.py:352(<listcomp>)
+ #        1    0.000    0.000    3.193    3.193 pentago.py:392(timer)
+ #   147961    0.061    0.000    0.061    0.000 pentago.py:79(update_parents)
+ #    17798    0.015    0.000    0.609    0.000 pentago.py:92(moves)
+ #    17798    0.594    0.000    0.594    0.000 pentago.py:93(<listcomp>)
+ #        3    0.000    0.000    0.000    0.000 socket.py:342(send)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1017(_wait_for_tstate_lock)
+ #        3    0.000    0.000    0.000    0.000 threading.py:1071(is_alive)
+ #        3    0.000    0.000    0.000    0.000 threading.py:513(is_set)
+ #   148402    0.020    0.000    0.020    0.000 {built-in method builtins.all}
+ #        1    0.000    0.000    3.193    3.193 {built-in method builtins.exec}
+ #        2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+ #    14843    0.002    0.000    0.002    0.000 {built-in method builtins.len}
+ #        1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+ #        2    0.000    0.000    0.000    0.000 {built-in method posix.getpid}
+ #        2    0.000    0.000    0.000    0.000 {built-in method time.time}
+ #        3    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+ #        3    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+ #   301322    0.048    0.000    0.048    0.000 {method 'copy' of 'list' objects}
+ #        1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+ #    11888    0.002    0.000    0.002    0.000 {method 'random' of '_random.Random' objects}
+
+
