@@ -5,119 +5,6 @@ import cProfile
 import random
     
 
-class pentago():
-    def __init__(self):
-        self.board = [[' ']*6 for _ in range(6)]
-        self.player = 'o'
-        self.lines_h = [[(i,j+k) for k in range(5)] 
-                        for i in range(6) for j in range(2)]
-        self.lines_v = [[(i+k,j) for k in range(5)]
-                        for i in range(2) for j in range(6)]
-        self.lines_d1 = [[(i+k,j+k) for k in range(5)] 
-                         for i in range(2) for j in range(2)]
-        self.lines_d2 = [[(i+k,j-k) for k in range(5)] 
-                         for i in range(2) for j in range(4,6)]
-        self.lines = self.lines_h+self.lines_v+self.lines_d1+self.lines_d2
-    
-    def print_board(self):
-        for i in range(11):
-            for j in range(11):
-                if i % 2 == 1:
-                    print('-', end = '')
-                elif j % 2 == 1:
-                    print('|', end = '')
-                else:
-                    print(self.board[int(i/2)][int(j/2)], end = '')
-            print('')
-        print('\n')
-        
-    
-    def replace_board(self, board):
-        # manually change the board, for testing purposes
-        self.board = board
-    
-    def moves(self):
-        moves = [(i,j,quadrant, direction)
-                 for i in range(6)
-                 for j in range(6)
-                 if self.board[i][j] == ' '
-                 for quadrant in range(4)
-                 for direction in ['c', 'ac']]
-        return moves
-    
-    def ask_for_move(self):
-        move = input('Please enter your move: ')
-        i,j,q,d = move.split(',')
-        i,j,q = int(i), int(j), int(q)
-        return (i,j,q,d)
-    
-    def rotate(self, quadrant, direction):
-        q = [[0,0], [0,1], [1,0], [1,1]][quadrant]
-        temp = copy.deepcopy(self.board)
-        sub_board = [ [temp[3*q[0]+i][3*q[1]+j]
-                       for j in range(3)] for i in range(3)]
-        
-        if direction == 'c':
-            for i in range(3):
-                for j in range(3):
-                    self.board[3*q[0]+i][3*q[1]+j] = sub_board[2-j][i]
-                    
-        if direction == 'ac':
-            for i in range(3):
-                for j in range(3):
-                    self.board[3*q[0]+i][3*q[1]+j] = sub_board[j][2-i]
-    
-    def update_board(self, move):
-        i,j, quadrant, direction = move
-        self.board[i][j] = self.player
-        self.rotate(quadrant, direction)
-        
-        if self.player == 'o':
-            self.player = 'x'
-        else:
-            self.player = 'o'
-    
-    def play(self):
-        while not(self.game_over()):
-            self.print_board()
-            print(f'Current player is: {self.player} \n')
-            move = self.ask_for_move()
-            print('')
-            self.update_board(move)
-            self.game_over()
-        
-        print('The game has ended')
-        self.print_board()
-        if self.value == 1:
-            print('The winner is o')
-        elif self.value == 0:
-            print('The winner is x')
-        elif self.value == 0.5:
-            print('It is a draw')
-    
-    def game_over(self):
-        if any([
-                all([
-                    self.board[i][j] == 'o' for i,j in line
-                    ])
-                for line in self.lines
-                ]):
-            self.value = 1
-            return True
-        elif any([
-                all([
-                    self.board[i][j] == 'x' for i,j in line
-                    ])
-                for line in self.lines
-                ]):
-            self.value = 0
-            return True
-        elif len(self.moves()) == 0:
-            self.value = 0.5
-            return True
-        return False
-
-
 class Node():
     def __init__(self, board, player, parent, action, depth):
         self.board = board
@@ -132,95 +19,28 @@ class Node():
         self.best_move = None
 
 
-class Frontier():
-    def __init__(self):
-        self.nodes = []
-        self.boards = []
-    
-    def next_node(self):
-        node = self.nodes[-1]
-        self.nodes = self.nodes[:-1]
-        return node
-    
-    def add_node(self, node):
-        self.nodes.append(node)
-        self.boards.append([node.parent, node.board])
-
-
-
-def find_move3(node, max_depth):
-    
+def find_move(node, max_depth):   
     board = node.board
     
-    go = game_over3(board, lines5)
+    go = game_over(board, lines)
     if go is not None:
         node.value = go
-        update_parents2(node)
+        update_parents(node)
         return None
     
     if node.depth == max_depth:
         node.value = 0.5 + random.random()*0.1
-        update_parents2(node)
-        return None
-    
-    boards_seen = []
-    # moves_left = len(moves3(board))
-    for move in moves3(board):
-        # if node.depth == 0:
-            # moves_left -= 1
-            # print(moves_left)
-        
-        if prune2(node) or node.min_value == node.max_value:
-            break
-        
-        new_board_ = new_board3(board, node.player, move)
-        
-        if new_board_ in boards_seen:
-            continue
-        
-        new_node = Node(new_board_,
-                        1-node.player,
-                        node,
-                        move,
-                        node.depth + 1)
-        
-        boards_seen.append(new_board_)
-        
-        find_move3(new_node, max_depth)
-    
-    if node.player == 1:
-        node.value = node.min_value
-    elif node.player == 0:
-        node.value = node.max_value
-    if node.depth > 0:
-        update_parents2(node)
-        
-    return node.best_move
-
-
-
-def find_move2(node, max_depth):
-    
-    board = node.board
-    
-    if game_over(board, lines) is not None:
-        node.value = game_over(board, lines)
-        update_parents2(node)
-        return None
-    
-    if node.depth == max_depth:
-        node.value = 0.5 + random.random()*0.1
-        update_parents2(node)
+        update_parents(node)
         return None
     
     boards_seen = []
     # moves_left = len(moves(board))
     for move in moves(board):
         # if node.depth == 0:
-        #     moves_left -= 1
-        #     print(moves_left)
+            # moves_left -= 1
+            # print(moves_left)
         
-        if prune2(node) or node.min_value == node.max_value:
+        if prune(node) or node.min_value == node.max_value:
             break
         
         new_board_ = new_board(board, node.player, move)
@@ -236,73 +56,17 @@ def find_move2(node, max_depth):
         
         boards_seen.append(new_board_)
         
-        find_move2(new_node, max_depth)
+        find_move(new_node, max_depth)
     
     if node.player == 1:
         node.value = node.min_value
     elif node.player == 0:
         node.value = node.max_value
     if node.depth > 0:
-        update_parents2(node)
+        update_parents(node)
         
     return node.best_move
     
-
-def update_parents2(node):
-    parent = node.parent
-    
-    if parent is None:
-        1 + 1 == 2
-    
-    if parent.player == 1 and node.value > parent.min_value:
-        parent.min_value = node.value
-        parent.best_move = node.action
-    elif parent.player == 0 and node.value < parent.max_value:
-        parent.max_value = node.value
-        parent.best_move = node.action
-    
-
-
-def find_move(board, player, max_depth):
-    initial_node = Node(board, player, None, None, depth=0)
-    frontier = Frontier()
-    frontier.add_node(initial_node)
-    
-    while initial_node.value is None:
-        current_node = frontier.next_node()
-        current_board = current_node.board
-        
-        if prune(current_node):
-            update_parents(current_node, True)
-            continue
-        if game_over(current_board, lines) is not None:
-            current_node.value = game_over(current_board, lines)
-            update_parents(current_node)
-        elif current_node.depth == max_depth:
-            current_node.value = 0.5 + random.random()*0.1
-            update_parents(current_node)
-        else:
-            for move in moves(current_board):        
-                new_board_ = new_board(current_board,
-                                      current_node.player,
-                                      move)
-                
-                if [current_node, new_board_] in frontier.boards:
-                    continue
-                
-                new_node = Node(new_board_,
-                                1 - current_node.player,
-                                current_node,
-                                move,
-                                current_node.depth + 1)
-                
-                frontier.add_node(new_node)
-                
-                current_node.valueless_children += 1
-    
-    # return initial_node.value, initial_node.best_move
-    return initial_node.best_move
-
 
 def update_parents(node, prune = False):
     parent = node.parent
@@ -330,21 +94,7 @@ def update_parents(node, prune = False):
             update_parents(parent)
             
 
-
-
-
-
 def moves(board):
-    moves = [(i,j,quadrant, direction)
-             for i in range(6)
-             for j in range(6)
-             if board[i][j] == ' '
-             for quadrant in range(4)
-             for direction in ['c', 'ac']]
-    return moves
-    
-
-def moves3(board):
     moves = [(i,j,quadrant, direction)
              for i in range(6)
              for j in range(6)
@@ -356,35 +106,10 @@ def moves3(board):
 
 def new_board(board, player, move):
     i,j, quadrant, direction = move
-    new_board = copy.deepcopy(board)
-    new_board[i][j] = player
-    
-    # create array of quadrant of original board to be rotated
-    q = [[0,0], [0,1], [1,0], [1,1]][quadrant]
-    temp = copy.deepcopy(new_board)
-    sub_board = [ [temp[3*q[0]+i][3*q[1]+j]
-                   for j in range(3)] for i in range(3)]    
-    
-    # rotate quadrant and update new board
-    if direction == 'c':
-        for i in range(3):
-            for j in range(3):
-                new_board[3*q[0]+i][3*q[1]+j] = sub_board[2-j][i]
-                
-    if direction == 'ac':
-        for i in range(3):
-            for j in range(3):
-                new_board[3*q[0]+i][3*q[1]+j] = sub_board[j][2-i]   
-    
-    return new_board
-
-
-def new_board3(board, player, move):
-    i,j, quadrant, direction = move
     new_board = board.copy()
     new_board[6*i+j] = player    
     
-    # create array of quadrant of original board to be rotated
+    # create quadrant to be rotated
     q = [[0,0], [0,1], [1,0], [1,1]][quadrant]
     temp = new_board.copy()
     sub_board = [ [temp[6*(3*q[0]+i)+(3*q[1]+j)]
@@ -404,21 +129,7 @@ def new_board3(board, player, move):
     return new_board
 
 
-
 def print_board(board):
-    for i in range(11):
-        for j in range(11):
-            if i % 2 == 1:
-                print('-', end = '')
-            elif j % 2 == 1:
-                print('|', end = '')
-            else:
-                print(board[int(i/2)][int(j/2)], end = '')
-        print('')
-    print('\n')
-
-
-def print_board3(board):
     for i in range(11):
         for j in range(11):
             if i % 2 == 1:
@@ -431,21 +142,7 @@ def print_board3(board):
     print('\n')
 
 
-def create_lines():
-    lines_h = [[(i,j+k) for k in range(5)] 
-               for i in range(6) for j in range(2)]
-    lines_v = [[(i+k,j) for k in range(5)]
-               for i in range(2) for j in range(6)]
-    lines_d1 = [[(i+k,j+k) for k in range(5)] 
-                for i in range(2) for j in range(2)]
-    lines_d2 = [[(i+k,j-k) for k in range(5)] 
-                for i in range(2) for j in range(4,6)]
-    return lines_h+lines_v+lines_d1+lines_d2
-lines = create_lines()
-
-
-
-def create_lines3():
+def create_lines1():
     lines_h = [[6*i+(j+k) for k in range(5)] 
                for i in range(6) for j in range(2)]
     lines_v = [[6*(i+k)+j for k in range(5)]
@@ -455,10 +152,8 @@ def create_lines3():
     lines_d2 = [[6*(i+k)+j-k for k in range(5)] 
                 for i in range(2) for j in range(4,6)]
     return lines_h+lines_v+lines_d1+lines_d2
-lines3 = create_lines3()
 
-
-def create_lines4():
+def create_lines2():
     old_lines = create_lines3()
     line_dict = {}
     
@@ -484,9 +179,8 @@ def create_lines4():
         line_dict[c] = new_lines
             
     return line_dict
-lines4 = create_lines4()
 
-def create_lines5():
+def create_lines3():
     lines_h = [[6*i+(1+k) for k in range(4)] 
                for i in range(6)]
     h_extra = [[6*i+0, 6*i+5] for i in range(6)]
@@ -502,68 +196,24 @@ def create_lines5():
     lines_d = lines_d1+lines_d2
     
     return [lines_h, h_extra, lines_v, v_extra, lines_d]
-lines5 = create_lines5()
+
+lines = create_lines1()
 
 
-    
-
-
-
-def game_over(board, lines):
-    if any([
-            all([
-                board[i][j] == 1 for i,j in line
-                ])
-            for line in lines
-            ]):
-        return 1
-    elif any([
-            all([
-                board[i][j] == 0 for i,j in line
-                ])
-            for line in lines
-            ]):
-        return 0
-    elif len(moves(board)) == 0:
-        return 0.5
-    return None
-
-
-def game_over3_0(board, lines):
-    # adapted for lines3
-    if any([
-            all([
-                board[i] == 1 for i in line
-                ])
-            for line in lines
-            ]):
-        return 1
-    elif any([
-            all([
-                board[i] == 0 for i in line
-                ])
-            for line in lines
-            ]):
-        return 0
-    elif len(moves3(board)) == 0:
-        return 0.5
-    return None
-
-
-def game_over3_1(board, lines):
-    # lines3 + change in algorithm
+def game_over1(board, lines):
+    # lines1 + change in algorithm
     for line in lines:
         temp = board[line[0]]
         if temp == ' ':
             continue
         if all([board[line[i]] == temp for i in [1,2,3,4]]):
             return board[line[0]]
-    if len(moves3(board)) == 0:
+    if len(moves(board)) == 0:
         return 0.5
     return None
 
 
-def game_over3_2(board, lines_dict):
+def game_over2(board, lines_dict):
     # combines with lines4
     for c, lines in lines_dict.items():
         temp = board[c]
@@ -574,13 +224,13 @@ def game_over3_2(board, lines_dict):
             if all([board[line[i]] == temp for i in [0,1,2,3,4]]):
                 return temp
             
-    if len(moves3(board)) == 0:
+    if len(moves(board)) == 0:
         return 0.5
     return None
 
 
 def game_over3(board, lines_info):
-    # combines with lines5
+    # combines with lines3
     lines_h, h_extra, lines_v, v_extra, lines_d = lines_info
     
     for i in range(6):
@@ -611,9 +261,11 @@ def game_over3(board, lines_info):
             continue
         if all([board[line[i]] == temp for i in [1,2,3,4]]):
             return board[line[0]]
-    if len(moves3(board)) == 0:
+    if len(moves(board)) == 0:
         return 0.5
     return None
+
+game_over = game_over1
 
 
 
@@ -623,40 +275,20 @@ def ask_for_move():
     i,j,q = int(i), int(j), int(q)
     return (i,j,q,d)
 
-
-
 def prune(node):
-    if node.depth < 2:
+    if node.depth == 0:
         return False
-    
+
     parent = node.parent
-    gparent = parent.parent
-    
-    if node.player == 1 and parent.max_value  < gparent.min_value:
+    if node.player == 0 and node.max_value < parent.min_value:
         return True
-    elif node.player == 0 and parent.min_value > gparent.max_value:
+    elif node.player == 1 and node.min_value > parent.max_value:
         return True
     else:
         return False
-
-
-def prune2(node):
-    if node.depth < 2:
-        return False
-    
-    parent = node
-    gparent = parent.parent
-    
-    if node.player == 1 and parent.max_value  < gparent.min_value:
-        return True
-    elif node.player == 0 and parent.min_value > gparent.max_value:
-        return True
-    else:
-        return False
-
 
 def play():
-    board = [[' ']*6 for _ in range(6)]
+    board = [' ' for _ in range(36)]
     ai =  False
     player = 1
     
@@ -668,9 +300,10 @@ def play():
         if ai == False:
             move = ask_for_move()
             ai = True
-        elif ai == True:
+        else:
             print('ai is thinking...')
-            move = find_move(board, player, 2)
+            node = Node(board, player, None, None, 0)
+            move = find_move(node, 2)
             if move is None:
                 move = moves(board)[0]
             ai = False
@@ -724,94 +357,19 @@ def test():
     new_boards = [ [board[i][j] for i in range(6) for j in range(6)]
                   for board in boards ]
             
-    # for board, player in itertools.product(range(1),range(2)):
-    #     output, time = timer(find_move, boards[board], player, 2)
-    #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
-    
-    # -------loop through boards using version 2
-    # for board, player in itertools.product(range(5),range(2)):
-    #     root_node = Node(boards[board], player, None, None, depth=0)
-    #     output, time = timer(find_move2, root_node, 2)
-    #     print(f"Board: {board}, Player: {player}, Move: {output}, Time taken: {time}")
-            
-    # ------test finding optimal move for depth 3, version 2
-    # node4 = Node(board4, 1, None, None, 0)
-    # print(find_move2(node4,3))
-    # print(timer(find_move2, node4,3))
-    
-    
-    
-    # -------loop through boards using version 3
+
+    # -------loop through boards
     # for board, player in itertools.product(range(5),range(2)):
     #     root_node = Node(new_boards[board], player, None, None, depth=0)
-    #     output, time = timer(find_move3, root_node, 2)
-    #     print(f"Board: {board}, Player: {player}, Time taken: {time}")
+    #     output, time = timer(find_move, root_node, 2)
+    #     print(f"Board: {board}, Player: {player}, Output: {output}, Time taken: {time}")
     
     # ------test finding optimal move for depth 3, version 3
     node4 = Node(new_boards[4], 1, None, None, 0)
-    print(timer(find_move3, node4,3))
+    print(timer(find_move, node4,3))
     
     
-    
-    
-    
-    # print_board(board4)
-    # print("Move for player 0: ", end='')
-    # print(find_move(board4,0,1))
-    # print("Move for player 1: ", end='')
-    # print(find_move(board4,1,2))
-    
-    # print_board(board3)
-    # print("Move for player 1: ", end='')
-    # print(find_move(board3,1,1))
-    # print("Move for player 0: ", end='')
-    # print(find_move(board3,0,2))
-    
-    # print('\nWinning position if player 1 makes their move:')
-    # print_board(new_board(board3, 1, find_move(board3,1,1)))    
-    
-    # print_board(board2)
-    # print(moves(board2))
-    # for move in moves(board3):
-    #     print(move)
-    #     new = new_board(board3, 1, move)
-    #     print_board(new)
-    #     print(game_over(new, lines))
-    
-    
-    # test = pentago()
-    # test.replace_board(board4)
-    # test.play()
-    
-    # test.replace_board(board3)
-    # test.print_board()
-    # test.update_board((1,4,1,'c'))
-    # test.print_board()
-    
-    # test.rotate(0,'ac')
-    # test.print_board()
-    # print(test.player)
-    
-    
-    # testing set of lines is correct
-    # test = pentago()
-    # for line in lines:
-    #     new_board = copy.deepcopy(board)
-    #     for i,j in line:
-    #         new_board[i][j] = 'o'
-    #         test.replace_board(new_board)
-    #     test.print_board()
-    
-    
-    # testing set of lines3 is correct
-    # for line in lines3:
-    #     test = new_boards[0].copy()
-    #     for l in line:
-    #         test[l] = 1
-    #     print_board3(test)
-    
-    
-    # test that game over works in version 3
+    # -------test game over
     # print(game_over3(new_boards[3],lines3))
     # new_boards[3][4] = 0
     # print(game_over3(new_boards[3],lines3))
@@ -820,11 +378,8 @@ def test():
     # new_boards[4][9] = 1
     # print(game_over3(new_boards[4], lines3))
     
-    # test new_board works in version 3
-    # for move in moves3(new_boards[1]):
-    #     print_board3(new_board3(new_boards[1],2, move))
-    
-    # testing set of lines4 is correct
+   
+    # --------- lines is correc
     # for lines in lines4.values():
     #     for line in lines:
     #         test = new_boards[0].copy()
@@ -832,27 +387,7 @@ def test():
     #             test[l] = 1
     #         print_board3(test)
     
-    
-    # test that game over works with lines4
-    # print(game_over3(new_boards[3],lines4))
-    # new_boards[3][4] = 0
-    # print(game_over3(new_boards[3],lines4))
-    # print(game_over3(new_boards[4], lines4))
-    # new_boards[4][6] = 1
-    # new_boards[4][9] = 1
-    # print(game_over3(new_boards[4], lines4))
-    
-    # test that game over works with lines5
-    # print(game_over3(new_boards[3],lines5))
-    # new_boards[3][24] = 0
-    # print(game_over3(new_boards[3],lines5))
-    # print(game_over3(new_boards[4], lines5))
-    # new_boards[4][6] = 1
-    # new_boards[4][9] = 1
-    # print(game_over3(new_boards[4], lines5))
-    
     return None
-
 
 def timer(fn, *args):
     t0 = time.time()
@@ -860,9 +395,11 @@ def timer(fn, *args):
     t1 = time.time()
     return output, t1 - t0
 
-cProfile.run('test()')
+# cProfile.run('test()')
 # test()
 # play()
+
+
 
 
 
@@ -1023,4 +560,63 @@ cProfile.run('test()')
 # Board: 3, Player: 1, Time taken: 0.24969196319580078
 # Board: 4, Player: 0, Time taken: 0.9256749153137207
 # Board: 4, Player: 1, Time taken: 0.9308981895446777
+# cProfile for depth 3, was similar to above. 14 seconds
+
+
+# -------------- version3. + lines5
 # cProfile for depth 3
+   # 299209    3.409    0.000   14.048    0.000 pentago.py:582(game_over3)
+   
+ # -------------- tidied up, and fixed prune  
+# Board: 0, Player: 0, Time taken: 0.08965802192687988
+# Board: 0, Player: 1, Time taken: 0.06820201873779297
+# Board: 1, Player: 0, Time taken: 0.0002720355987548828
+# Board: 1, Player: 1, Time taken: 0.0002040863037109375
+# Board: 2, Player: 0, Time taken: 0.10023093223571777
+# Board: 2, Player: 1, Time taken: 0.053900957107543945
+# Board: 3, Player: 0, Time taken: 0.3132359981536865
+# Board: 3, Player: 1, Time taken: 1.138319730758667
+# Board: 4, Player: 0, Time taken: 0.2041919231414795
+# Board: 4, Player: 1, Time taken: 0.3106269836425781
+# cprofile for depth3. Game_over and moves are big ones.
+
+# ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+#         1    0.000    0.000    3.189    3.189 <string>:1(<module>)
+#         2    0.000    0.000    0.000    0.000 _weakrefset.py:38(_remove)
+#         3    0.000    0.000    0.000    0.000 iostream.py:197(schedule)
+#         2    0.000    0.000    0.000    0.000 iostream.py:309(_is_master_process)
+#         2    0.000    0.000    0.000    0.000 iostream.py:322(_schedule_flush)
+#         2    0.000    0.000    0.000    0.000 iostream.py:384(write)
+#         3    0.000    0.000    0.000    0.000 iostream.py:93(_event_pipe)
+#     63374    0.358    0.000    0.673    0.000 pentago.py:107(new_board)
+#    190122    0.171    0.000    0.171    0.000 pentago.py:115(<listcomp>)
+#     39342    0.497    0.000    2.078    0.000 pentago.py:203(game_over1)
+#    411457    0.224    0.000    0.224    0.000 pentago.py:209(<listcomp>)
+#   39342/1    0.301    0.000    3.189    3.189 pentago.py:22(find_move)
+#     64334    0.031    0.000    0.031    0.000 pentago.py:278(prune)
+#         1    0.000    0.000    3.189    3.189 pentago.py:318(test)
+#         1    0.000    0.000    0.000    0.000 pentago.py:320(<listcomp>)
+#         1    0.000    0.000    0.000    0.000 pentago.py:356(<listcomp>)
+#         1    0.000    0.000    3.189    3.189 pentago.py:391(timer)
+#     39341    0.029    0.000    0.029    0.000 pentago.py:71(update_parents)
+#     39342    0.030    0.000    0.030    0.000 pentago.py:9(__init__)
+#     40003    0.032    0.000    1.332    0.000 pentago.py:97(moves)
+#     40003    1.300    0.000    1.300    0.000 pentago.py:98(<listcomp>)
+#         3    0.000    0.000    0.000    0.000 socket.py:342(send)
+#         3    0.000    0.000    0.000    0.000 threading.py:1017(_wait_for_tstate_lock)
+#         3    0.000    0.000    0.000    0.000 threading.py:1071(is_alive)
+#         3    0.000    0.000    0.000    0.000 threading.py:513(is_set)
+#    411457    0.054    0.000    0.054    0.000 {built-in method builtins.all}
+#         1    0.000    0.000    3.189    3.189 {built-in method builtins.exec}
+#         2    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+#     38968    0.005    0.000    0.005    0.000 {built-in method builtins.len}
+#         1    0.000    0.000    0.000    0.000 {built-in method builtins.print}
+#         2    0.000    0.000    0.000    0.000 {built-in method posix.getpid}
+#         2    0.000    0.000    0.000    0.000 {built-in method time.time}
+#         3    0.000    0.000    0.000    0.000 {method 'acquire' of '_thread.lock' objects}
+#         3    0.000    0.000    0.000    0.000 {method 'append' of 'collections.deque' objects}
+#     39341    0.006    0.000    0.006    0.000 {method 'append' of 'list' objects}
+#    126748    0.022    0.000    0.022    0.000 {method 'copy' of 'list' objects}
+#         1    0.000    0.000    0.000    0.000 {method 'disable' of '_lsprof.Profiler' objects}
+#         2    0.000    0.000    0.000    0.000 {method 'discard' of 'set' objects}
+#     37933    0.006    0.000    0.006    0.000 {method 'random' of '_random.Random' objects}
